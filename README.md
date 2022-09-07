@@ -1,61 +1,45 @@
-# docker-laravel 🐳
+# docker-laravel-ci-layer-caching
 
-<p align="center">
-    <img src="https://user-images.githubusercontent.com/35098175/145682384-0f531ede-96e0-44c3-a35e-32494bd9af42.png" alt="docker-laravel">
-</p>
-<p align="center">
-    <img src="https://github.com/ucan-lab/docker-laravel/actions/workflows/laravel-create-project.yml/badge.svg" alt="Test laravel-create-project.yml">
-    <img src="https://github.com/ucan-lab/docker-laravel/actions/workflows/laravel-git-clone.yml/badge.svg" alt="Test laravel-git-clone.yml">
-    <img src="https://img.shields.io/github/license/ucan-lab/docker-laravel" alt="License">
-</p>
+LaravelのアプリケーションのテストをGitHub Actionsで行っています。docker compose upしてからテストを実行しているのですが、毎回イメージのダウンロードやビルドがされていて遅いです。
 
-## Introduction
+そのため、イメージやビルドしたもの（？←レイヤー）をキャッシュして高速化をしようと思いました。
 
-Build a simple laravel development environment with docker-compose. Compatible with Windows(WSL2), macOS(M1) and Linux.
+## 調査
 
-## Usage
+[satackey/action-docker-layer-caching](https://github.com/satackey/action-docker-layer-caching)がお手軽そうなの、これを使ってみようと思います。レイヤー、Buildkit、Buildxあたりの用語が分からないので、そのあたりを調べるとよさそうです。
 
-1. Click [Use this template](https://github.com/ucan-lab/docker-laravel/generate)
-2. Git clone & change directory
-3. Execute the following command
+- [GitHub Actions上でdocker composeを使ってCIを回すためにうまいことキャッシュする方法 - Qiita](https://qiita.com/yu-ichiro/items/c1a1248c0cdeeb0e6b42)
+  - Buildxを使ってビルドし、Buildxの生成ファイルをactions/cacheでキャッシュする
+  - ビルドしたイメージを別のジョブで使用するために、ローカルレジストリにアップロードして、ローカルレジストリのデータをactions/cacheでキャッシュする
+    - 裏技的な使い方みたいです
+- docker-layer-cachingっていうカスタムアクションがあるっぽい
+  - [Github Actionsでdocker-composeのレイヤーキャッシュを使う方法](https://zenn.dev/fujisawa33/articles/94fe522852ad22)
+  - これお手軽で良さそうなので、使ってみようと思います
+- [Dockerに関するキャッシュたち](https://zenn.dev/masibw/articles/57a47a7381b9b3)
 
-```bash
-$ make create-project # Install the latest Laravel project
-$ make install-recommend-packages # Optional
+## やってみた
+
+```yaml
+name: backend-ci
+on:
+  push:
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker compose pull
+      - uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+      - run: make up
+      - run: docker compose exec app composer install
+      - run: make test
 ```
 
-http://localhost
+キャッシュがない場合
 
-## Tips
+![](https://i.gyazo.com/e7362cac92971c392d9ec1e092b4fdbc.png)
 
-- Read this [Makefile](https://github.com/ucan-lab/docker-laravel/blob/main/Makefile).
-- Read this [Wiki](https://github.com/ucan-lab/docker-laravel/wiki).
+キャッシュがある場合
 
-## Container structures
-
-```bash
-├── app
-├── web
-└── db
-```
-
-### app container
-
-- Base image
-  - [php](https://hub.docker.com/_/php):8.1-fpm-bullseye
-  - [composer](https://hub.docker.com/_/composer):2.2
-
-### web container
-
-- Base image
-  - [nginx](https://hub.docker.com/_/nginx):1.22
-
-### db container
-
-- Base image
-  - [mysql/mysql-server](https://hub.docker.com/r/mysql/mysql-server):8.0
-
-### mailhog container
-
-- Base image
-  - [mailhog/mailhog](https://hub.docker.com/r/mailhog/mailhog)
+![]()
