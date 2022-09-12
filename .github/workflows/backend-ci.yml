@@ -15,7 +15,7 @@ jobs:
   build-and-test-2:
     # build-push-actionを使う
     env:
-      APP_COMPOSE_TAG: docker-laravel-ci-layer-caching_app
+      APP_COMPOSE_TAG: docker-laravel-ci-layer-caching-app
       APP_TAG: tekihei2317/layer-caching-test-app
     runs-on: ubuntu-22.04
     steps:
