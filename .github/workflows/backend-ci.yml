@@ -21,6 +21,7 @@ jobs:
       - uses: docker/setup-buildx-action@v2
       - uses: docker/build-push-action@v3
         with:
+          file: infra/docker/php/Dockerfile
           load: true
           tags: ${{ env.APP_TAG }}
       - run: docker compose up -d app web
