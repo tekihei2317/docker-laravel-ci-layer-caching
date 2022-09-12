@@ -31,6 +31,7 @@ jobs:
           file: infra/docker/php/Dockerfile
           load: true
           tags: ${{ env.APP_COMPOSE_TAG }}
+          cache-from: type=gha
       # テスト
       - run: docker compose up -d app web
       - run: docker compose exec app composer install
@@ -46,3 +47,4 @@ jobs:
           file: infra/docker/php/Dockerfile
           push: true
           tags: ${{ env.APP_TAG }}
+          cache-to: type=gha,mode=max
