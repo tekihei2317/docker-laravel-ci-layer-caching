@@ -9,6 +9,24 @@ jobs:
       - run: docker compose pull
       - uses: satackey/action-docker-layer-caching@v0.0.11
         continue-on-error: true
-      - run: docker compose up -d app
+      - run: docker compose up -d app web
       - run: docker compose exec app composer install
       - run: make test
+  build-and-test-2:
+    # build-push-actionを使う
+    env:
+      APP_TAG: tekihei2317/laravel-layer-caching-test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v3
+        with:
+          load: true
+          tags: ${{ env.APP_TAG }}
+      - run: docker compose up -d app web
+      - run: docker compose exec app composer install
+      - run: make test
+      - uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ env.APP_TAG }}
